@@ -1,0 +1,1 @@
+select sql_id,plan_hash_value,depth,cost,cardinality,object_name,operation,options,id from v$sql_plan where sql_id = '09399fdd8y7yf' order by id;
