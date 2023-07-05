@@ -1,63 +1,61 @@
-SET LINESIZE 145
-SET PAGESIZE 9999
-SET VERIFY   off
- 
-COLUMN H00   FORMAT 999     HEADING '00'
-COLUMN H01   FORMAT 999     HEADING '01'
-COLUMN H02   FORMAT 999     HEADING '02'
-COLUMN H03   FORMAT 999     HEADING '03'
-COLUMN H04   FORMAT 999     HEADING '04'
-COLUMN H05   FORMAT 999     HEADING '05'
-COLUMN H06   FORMAT 999     HEADING '06'
-COLUMN H07   FORMAT 999     HEADING '07'
-COLUMN H08   FORMAT 999     HEADING '08'
-COLUMN H09   FORMAT 999     HEADING '09'
-COLUMN H10   FORMAT 999     HEADING '10'
-COLUMN H11   FORMAT 999     HEADING '11'
-COLUMN H12   FORMAT 999     HEADING '12'
-COLUMN H13   FORMAT 999     HEADING '13'
-COLUMN H14   FORMAT 999     HEADING '14'
-COLUMN H15   FORMAT 999     HEADING '15'
-COLUMN H16   FORMAT 999     HEADING '16'
-COLUMN H17   FORMAT 999     HEADING '17'
-COLUMN H18   FORMAT 999     HEADING '18'
-COLUMN H19   FORMAT 999     HEADING '19'
-COLUMN H20   FORMAT 999     HEADING '20'
-COLUMN H21   FORMAT 999     HEADING '21'
-COLUMN H22   FORMAT 999     HEADING '22'
-COLUMN H23   FORMAT 999     HEADING '23'
-COLUMN TOTAL FORMAT 999,999 HEADING 'Total'
- 
- 
-SELECT
-    SUBSTR(TO_CHAR(first_time, 'DD/MM/RRRR HH:MI:SS'),1,10)                       DAY
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'00',1,0)) H00
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'01',1,0)) H01
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'02',1,0)) H02
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'03',1,0)) H03
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'04',1,0)) H04
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'05',1,0)) H05
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'06',1,0)) H06
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'07',1,0)) H07
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'08',1,0)) H08
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'09',1,0)) H09
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'10',1,0)) H10
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'11',1,0)) H11
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'12',1,0)) H12
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'13',1,0)) H13
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'14',1,0)) H14
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'15',1,0)) H15
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'16',1,0)) H16
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'17',1,0)) H17
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'18',1,0)) H18
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'19',1,0)) H19
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'20',1,0)) H20
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'21',1,0)) H21
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'22',1,0)) H22
-  , SUM(DECODE(SUBSTR(TO_CHAR(first_time, 'DD/MM/RR HH24:MI:SS'),10,2),'23',1,0)) H23
-  , COUNT(*)                                                                      TOTAL
-FROM
-  v$log_history  a
-GROUP BY
-    SUBSTR(TO_CHAR(first_time, 'DD/MM/RRRR HH:MI:SS'),1,10)
-ORDER BY 1
+set pages 999 lines 400
+col h0 format 999
+col h1 format 999
+col h2 format 999
+col h3 format 999
+col h4 format 999
+col h5 format 999
+col h6 format 999
+col h7 format 999
+col h8 format 999
+col h9 format 999
+col h10 format 999
+col h11 format 999
+col h12 format 999
+col h13 format 999
+col h14 format 999
+col h15 format 999
+col h16 format 999
+col h17 format 999
+col h18 format 999
+col h19 format 999
+col h20 format 999
+col h21 format 999
+col h22 format 999
+col h23 format 999
+col day format a10
+col total format 999,999
+col avg format 999,999.99
+
+SELECT TRUNC (first_time) "Date", TO_CHAR (first_time, 'Dy') "Day",
+COUNT (1) "Total",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '00', 1, 0)) "h0",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '01', 1, 0)) "h1",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '02', 1, 0)) "h2",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '03', 1, 0)) "h3",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '04', 1, 0)) "h4",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '05', 1, 0)) "h5",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '06', 1, 0)) "h6",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '07', 1, 0)) "h7",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '08', 1, 0)) "h8",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '09', 1, 0)) "h9",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '10', 1, 0)) "h10",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '11', 1, 0)) "h11",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '12', 1, 0)) "h12",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '13', 1, 0)) "h13",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '14', 1, 0)) "h14",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '15', 1, 0)) "h15",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '16', 1, 0)) "h16",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '17', 1, 0)) "h17",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '18', 1, 0)) "h18",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '19', 1, 0)) "h19",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '20', 1, 0)) "h20",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '21', 1, 0)) "h21",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '22', 1, 0)) "h22",
+SUM (DECODE (TO_CHAR (first_time, 'hh24'), '23', 1, 0)) "h23",
+ROUND (COUNT (1) / 24, 2) "Avg"
+FROM gv$log_history
+WHERE thread# = inst_id
+AND first_time > trunc(sysdate) - 40
+GROUP BY TRUNC (first_time), TO_CHAR (first_time, 'Dy')
+ORDER BY 1,2;
