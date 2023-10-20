@@ -1,3 +1,7 @@
+set linesize 300
+col STATUS format a25
+col TIME_TAKEN_DISPLAY format a10
+col hrs format 999.99
 SELECT j.session_recid,
        j.session_stamp,
        j.command_id,
