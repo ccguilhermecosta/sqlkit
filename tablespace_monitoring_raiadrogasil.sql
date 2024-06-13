@@ -1,71 +1,60 @@
-set linesize 300
-col used_bytes format 999999999999
-col max_bytes format 999999999999
-col free_bytes format 999999999999
-SELECT TS.tablespace_name             AS TABLESPACE,
-       TS.CONTENTS                    AS TYPE,
-       FL.bytes_used                  AS USED_BYTES,
-       FL.max_bytes                   AS MAX_BYTES,
-       FL.bytes_free                  AS FREE_BYTES,
-       Replace(FL.pct_used, ',', '.') AS USED_PCT,
-       Decode(TS.status, 'ONLINE', 1,
-                         'OFFLINE', 2,
-                         'READ ONLY', 3,
-                         0)           AS STATUS,
-       (SELECT Decode(database_role, 'SNAPSHOT STANDBY', 1,
-                                     'LOGICAL STANDBY', 2,
-                                     'PHYSICAL STANDBY', 3,
-                                     'PRIMARY', 4,
-                                     'FAR SYNC', 5,
-                                     0) AS ROLE
-        FROM   v$database)            AS DATABASE_ROLE
-FROM   (SELECT a.tablespace_name,
-               Round (a.bytes_alloc)                             bytes_alloc,
-               Round (Nvl (b.bytes_free, 0))                     bytes_free,
-               Round (( a.bytes_alloc - Nvl (b.bytes_free, 0) )) bytes_used,
-               Round (( ( a.bytes_alloc - Nvl (b.bytes_free, 0) ) / a.maxbytes )
-                      * 100,
-               2)
-                                                                 Pct_used,
-               Round (maxbytes)                                  MAX_BYTES
-        FROM   (SELECT f.tablespace_name,
-                       SUM (f.bytes)                                 bytes_alloc
-                       ,
-                       SUM (
-               Decode (f.autoextensible, 'YES', f.maxbytes,
-                                         'NO', f.bytes))maxbytes
-                FROM   dba_data_files f
-                GROUP  BY tablespace_name) a,
-               (SELECT f.tablespace_name,
-                       SUM (f.bytes) bytes_free
-                FROM   dba_free_space f
-                GROUP  BY tablespace_name) b
-        WHERE  a.tablespace_name = b.tablespace_name(+)
-        UNION ALL
-        SELECT h.tablespace_name,
-               Round (SUM (h.bytes_free + h.bytes_used))
-               bytes_alloc,
-               Round (SUM (( h.bytes_free + h.bytes_used ) -
-                           Nvl (p.bytes_used, 0)))
-               bytes_free,
-               Round (SUM (Nvl (p.bytes_used, 0)))
-               bytes_used,
-               Round (( SUM (Nvl (p.bytes_used, 0)) / SUM (
-                               Decode (f.autoextensible, 'YES', f.maxbytes,
-                                                  'NO', f.bytes)) ) * 100, 2)
-               pct_used,
-               Round (SUM (Decode (f.autoextensible, 'YES', f.maxbytes,
-                                                     'NO', f.bytes)))
-               MAX_BYTES
-        FROM   sys.gv_$temp_space_header h,
-               sys.gv_$temp_extent_pool p,
-               dba_temp_files f
-        WHERE  p.file_id(+) = h.file_id
-               AND p.tablespace_name(+) = h.tablespace_name
-               AND p.inst_id(+) = h.inst_id
-               AND f.file_id = h.file_id
-               AND f.tablespace_name = h.tablespace_name
-        GROUP  BY h.tablespace_name)FL
-       inner join dba_tablespaces TS
-               ON FL.tablespace_name = TS.tablespace_name
-ORDER  BY 1; 
+SELECT 
+   TB.TABLESPACE_NAME AS TABLESPACE,
+   TB.CONTENTS AS TYPE,
+   ROUND(VL.BYTES_ALLOC) AS BYTES_ALLOC, 
+   ROUND(NVL(TBM.USED_SPACE,0) * TB.BLOCK_SIZE) AS USED_BYTES,
+   ROUND(VL.MAXBYTES) AS MAX_BYTES,
+   ROUND(VL.BYTES_ALLOC-(NVL(TBM.USED_SPACE,0) * TB.BLOCK_SIZE)) AS FREE_BYTES,
+   REPLACE(ROUND(NVL(TBM.USED_PERCENT,0),2),',','.') AS USED_PCT,
+   DECODE(TB.STATUS, 'ONLINE', 1, 'OFFLINE', 2, 'READ ONLY', 3, 0) AS STATUS,
+  (SELECT DECODE(DATABASE_ROLE, 'SNAPSHOT STANDBY', 1, 'LOGICAL STANDBY', 2, 'PHYSICAL STANDBY', 3, 'PRIMARY', 4, 'FAR SYNC', 5, 0) AS ROLE FROM V$DATABASE) AS DATABASE_ROLE,
+   DECODE (TB.CONTENTS,'PERMANENT',1,'UNDO',2,'TEMPORARY',3) AS CONTENTS,
+   VL.DATCOUNT AS "FILES"
+FROM  DBA_TABLESPACES TB           
+    LEFT OUTER JOIN DBA_TABLESPACE_USAGE_METRICS TBM  ON TB.TABLESPACE_NAME = TBM.TABLESPACE_NAME
+    JOIN 
+(SELECT 
+                 F.TABLESPACE_NAME AS TABLESPACE,
+                 SUM (F.BYTES) BYTES_ALLOC,
+                 SUM (DECODE (F.AUTOEXTENSIBLE,'YES', GREATEST(F.MAXBYTES,F.BYTES),'NO', F.BYTES))MAXBYTES,
+                 COUNT(1) DATCOUNT
+        FROM DBA_DATA_FILES F
+        GROUP BY TABLESPACE_NAME
+) VL ON TB.TABLESPACE_NAME=VL.TABLESPACE
+UNION ALL
+SELECT 
+     TF.TABLESPACE AS TABLESPACE
+    ,TT.CONTENTS AS TYPE
+    ,TF."BYTES_ALLOC"
+    ,TF."USED_BYTES"
+    ,TF."MAX_BYTES"
+    ,TF."FREE_BYTES"
+    ,TF."USED_PCT"
+    ,DECODE(TT.STATUS, 'ONLINE', 1, 'OFFLINE', 2, 'READ ONLY', 3, 0) AS "STATUS"
+    ,(SELECT DECODE(DATABASE_ROLE, 'SNAPSHOT STANDBY', 1, 'LOGICAL STANDBY', 2, 'PHYSICAL STANDBY', 3, 'PRIMARY', 4, 'FAR SYNC', 5, 0) AS ROLE FROM V$DATABASE) AS DATABASE_ROLE
+    ,DECODE (TT.CONTENTS,'PERMANENT',1,'UNDO',2,'TEMPORARY',3) AS CONTENTS
+    ,TF.FILE_QTD AS FILES
+FROM     
+(SELECT 
+         DBA.TABLESPACE_NAME AS      "TABLESPACE",
+         (NVL(GVS.TOTAL,0)*DBA.BLOCK_SIZE)  "BYTES_ALLOC",
+         (NVL(GVS.USED,0)*DBA.BLOCK_SIZE)   "USED_BYTES",
+          DBA.MAX_BYTES              "MAX_BYTES",
+         (NVL(GVS.FREE,0)*DBA.BLOCK_SIZE)   "FREE_BYTES",
+         REPLACE(ROUND(((NVL(GVS.USED,0)*DBA.BLOCK_SIZE) / DBA.MAX_BYTES)* 100,2),',','.') USED_PCT,
+         DBA.DATCOUNT AS FILE_QTD
+FROM 
+(SELECT 
+     G.TABLESPACE_NAME,
+     MAX(G.BLOCK_SIZE) BLOCK_SIZE,
+     ROUND (SUM (DECODE (F.AUTOEXTENSIBLE,'YES', F.MAXBYTES,'NO', F.BYTES))) MAX_BYTES,
+     COUNT(1) AS DATCOUNT     
+FROM DBA_TABLESPACES G INNER JOIN DBA_TEMP_FILES F ON F.TABLESPACE_NAME=G.TABLESPACE_NAME
+GROUP BY G.TABLESPACE_NAME) DBA LEFT OUTER JOIN 
+(SELECT 
+    TABLESPACE_NAME,
+    NVL(SUM(FREE_BLOCKS),0) FREE,
+    NVL(SUM(USED_BLOCKS),0) USED,
+    NVL(SUM(TOTAL_BLOCKS),0)TOTAL
+FROM GV$SORT_SEGMENT 
+GROUP BY TABLESPACE_NAME) GVS ON DBA.TABLESPACE_NAME=GVS.TABLESPACE_NAME)TF INNER JOIN DBA_TABLESPACES TT ON TF.TABLESPACE=TT.TABLESPACE_NAME ORDER BY 1;
